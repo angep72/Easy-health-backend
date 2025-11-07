@@ -9,7 +9,167 @@ import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
+/**
+ * @openapi
+ * tags:
+ *   - name: LabTests
+ *     description: Manage lab test templates, requests, and results
+ * components:
+ *   schemas:
+ *     LabTestTemplate:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         name:
+ *           type: string
+ *         description:
+ *           type: string
+ *         price:
+ *           type: number
+ *           format: float
+ *         category:
+ *           type: string
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *     LabTestTemplateRequest:
+ *       type: object
+ *       required:
+ *         - name
+ *         - price
+ *       properties:
+ *         name:
+ *           type: string
+ *         description:
+ *           type: string
+ *         price:
+ *           type: number
+ *           format: float
+ *         category:
+ *           type: string
+ *     LabTestRequest:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         consultation_id:
+ *           type: string
+ *         patient_id:
+ *           type: string
+ *         doctor_id:
+ *           type: string
+ *         lab_test_template_id:
+ *           type: string
+ *         hospital_id:
+ *           type: string
+ *         status:
+ *           type: string
+ *           enum: [awaiting_payment, pending, in_progress, completed]
+ *         total_price:
+ *           type: number
+ *           format: float
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *     LabTestRequestPayload:
+ *       type: object
+ *       required:
+ *         - consultation_id
+ *         - patient_id
+ *         - doctor_id
+ *         - lab_test_template_id
+ *         - total_price
+ *       properties:
+ *         consultation_id:
+ *           type: string
+ *         patient_id:
+ *           type: string
+ *         doctor_id:
+ *           type: string
+ *         lab_test_template_id:
+ *           type: string
+ *         hospital_id:
+ *           type: string
+ *         status:
+ *           type: string
+ *           enum: [awaiting_payment, pending, in_progress, completed]
+ *         total_price:
+ *           type: number
+ *           format: float
+ *     LabTestResult:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         lab_test_request_id:
+ *           type: string
+ *         technician_id:
+ *           type: string
+ *         result_status:
+ *           type: string
+ *           enum: [positive, negative, inconclusive]
+ *         result_data:
+ *           type: string
+ *         notes:
+ *           type: string
+ *         completed_at:
+ *           type: string
+ *           format: date-time
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *     LabTestResultPayload:
+ *       type: object
+ *       required:
+ *         - lab_test_request_id
+ *         - result_status
+ *         - result_data
+ *       properties:
+ *         lab_test_request_id:
+ *           type: string
+ *         result_status:
+ *           type: string
+ *           enum: [positive, negative, inconclusive]
+ *         result_data:
+ *           type: string
+ *         notes:
+ *           type: string
+ */
+
 // Lab Test Templates
+/**
+ * @openapi
+ * /api/lab-tests/templates:
+ *   get:
+ *     summary: List lab test templates
+ *     tags:
+ *       - LabTests
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Array of lab test templates
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/LabTestTemplate'
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
 router.get('/templates', authenticate, async (req, res) => {
   try {
     const templates = await LabTestTemplate.find().sort({ name: 1 });
@@ -19,6 +179,36 @@ router.get('/templates', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /api/lab-tests/templates/{id}:
+ *   get:
+ *     summary: Retrieve a lab test template
+ *     tags:
+ *       - LabTests
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Template ID
+ *     responses:
+ *       200:
+ *         description: Lab test template details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LabTestTemplate'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Template not found
+ *       500:
+ *         description: Server error
+ */
 router.get('/templates/:id', authenticate, async (req, res) => {
   try {
     const template = await LabTestTemplate.findById(req.params.id);
@@ -31,6 +221,35 @@ router.get('/templates/:id', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /api/lab-tests/templates:
+ *   post:
+ *     summary: Create a lab test template
+ *     tags:
+ *       - LabTests
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LabTestTemplateRequest'
+ *     responses:
+ *       201:
+ *         description: Lab test template created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LabTestTemplate'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
+ *       500:
+ *         description: Server error
+ */
 router.post('/templates', authenticate, authorize('admin'), async (req, res) => {
   try {
     const template = new LabTestTemplate(req.body);
@@ -41,6 +260,44 @@ router.post('/templates', authenticate, authorize('admin'), async (req, res) => 
   }
 });
 
+/**
+ * @openapi
+ * /api/lab-tests/templates/{id}:
+ *   put:
+ *     summary: Update a lab test template
+ *     tags:
+ *       - LabTests
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Template ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LabTestTemplateRequest'
+ *     responses:
+ *       200:
+ *         description: Updated lab test template
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LabTestTemplate'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
+ *       404:
+ *         description: Template not found
+ *       500:
+ *         description: Server error
+ */
 router.put('/templates/:id', authenticate, authorize('admin'), async (req, res) => {
   try {
     const template = await LabTestTemplate.findByIdAndUpdate(
@@ -57,6 +314,34 @@ router.put('/templates/:id', authenticate, authorize('admin'), async (req, res) 
   }
 });
 
+/**
+ * @openapi
+ * /api/lab-tests/templates/{id}:
+ *   delete:
+ *     summary: Delete a lab test template
+ *     tags:
+ *       - LabTests
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Template ID
+ *     responses:
+ *       200:
+ *         description: Template deleted confirmation
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
+ *       404:
+ *         description: Template not found
+ *       500:
+ *         description: Server error
+ */
 router.delete('/templates/:id', authenticate, authorize('admin'), async (req, res) => {
   try {
     const template = await LabTestTemplate.findByIdAndDelete(req.params.id);
@@ -70,6 +355,36 @@ router.delete('/templates/:id', authenticate, authorize('admin'), async (req, re
 });
 
 // Lab Test Requests
+/**
+ * @openapi
+ * /api/lab-tests/requests:
+ *   get:
+ *     summary: List lab test requests
+ *     tags:
+ *       - LabTests
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: hospitalId
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Filter requests by hospital
+ *     responses:
+ *       200:
+ *         description: Array of lab test requests
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/LabTestRequest'
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
 router.get('/requests', authenticate, async (req, res) => {
   try {
     const query = {};
@@ -116,6 +431,36 @@ router.get('/requests', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /api/lab-tests/requests/{id}:
+ *   get:
+ *     summary: Retrieve a lab test request
+ *     tags:
+ *       - LabTests
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Lab test request ID
+ *     responses:
+ *       200:
+ *         description: Lab test request details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LabTestRequest'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Request not found
+ *       500:
+ *         description: Server error
+ */
 router.get('/requests/:id', authenticate, async (req, res) => {
   try {
     const request = await LabTestRequest.findById(req.params.id)
@@ -138,6 +483,33 @@ router.get('/requests/:id', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /api/lab-tests/requests:
+ *   post:
+ *     summary: Create a lab test request
+ *     tags:
+ *       - LabTests
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LabTestRequestPayload'
+ *     responses:
+ *       201:
+ *         description: Lab test request created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LabTestRequest'
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
 router.post('/requests', authenticate, async (req, res) => {
   try {
     // If hospital_id is not provided, derive it from consultation -> appointment
@@ -169,6 +541,42 @@ router.post('/requests', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /api/lab-tests/requests/{id}:
+ *   put:
+ *     summary: Update a lab test request
+ *     tags:
+ *       - LabTests
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Lab test request ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LabTestRequestPayload'
+ *     responses:
+ *       200:
+ *         description: Updated lab test request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LabTestRequest'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Request not found
+ *       500:
+ *         description: Server error
+ */
 router.put('/requests/:id', authenticate, async (req, res) => {
   try {
     const request = await LabTestRequest.findByIdAndUpdate(
@@ -196,6 +604,29 @@ router.put('/requests/:id', authenticate, async (req, res) => {
 });
 
 // Lab Test Results
+/**
+ * @openapi
+ * /api/lab-tests/results:
+ *   get:
+ *     summary: List lab test results
+ *     tags:
+ *       - LabTests
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Array of lab test results
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/LabTestResult'
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
 router.get('/results', authenticate, async (req, res) => {
   try {
     const query = {};
@@ -230,6 +661,36 @@ router.get('/results', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /api/lab-tests/results/{id}:
+ *   get:
+ *     summary: Retrieve a lab test result
+ *     tags:
+ *       - LabTests
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Lab test result ID
+ *     responses:
+ *       200:
+ *         description: Lab test result details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LabTestResult'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Result not found
+ *       500:
+ *         description: Server error
+ */
 router.get('/results/:id', authenticate, async (req, res) => {
   try {
     const result = await LabTestResult.findById(req.params.id)
@@ -254,6 +715,35 @@ router.get('/results/:id', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /api/lab-tests/results:
+ *   post:
+ *     summary: Record lab test results
+ *     tags:
+ *       - LabTests
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LabTestResultPayload'
+ *     responses:
+ *       201:
+ *         description: Lab test result created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LabTestResult'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
+ *       500:
+ *         description: Server error
+ */
 router.post('/results', authenticate, authorize('lab_technician'), async (req, res) => {
   try {
     const result = new LabTestResult({

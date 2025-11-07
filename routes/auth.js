@@ -6,7 +6,87 @@ import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
+/**
+ * @openapi
+ * tags:
+ *   - name: Auth
+ *     description: Authentication and session management
+ * components:
+ *   schemas:
+ *     AuthRegisterRequest:
+ *       type: object
+ *       required:
+ *         - email
+ *         - password
+ *         - full_name
+ *         - role
+ *       properties:
+ *         email:
+ *           type: string
+ *           format: email
+ *         password:
+ *           type: string
+ *           format: password
+ *         full_name:
+ *           type: string
+ *         role:
+ *           type: string
+ *           description: User role (e.g., admin, doctor, nurse, patient)
+ *         phone:
+ *           type: string
+ *         national_id:
+ *           type: string
+ *         insurance_id:
+ *           type: string
+ *           description: Insurance policy identifier
+ *     AuthLoginRequest:
+ *       type: object
+ *       required:
+ *         - email
+ *         - password
+ *       properties:
+ *         email:
+ *           type: string
+ *           format: email
+ *         password:
+ *           type: string
+ *           format: password
+ *     AuthResponse:
+ *       type: object
+ *       properties:
+ *         user:
+ *           $ref: '#/components/schemas/Profile'
+ *         token:
+ *           type: string
+ *           description: JWT access token
+ */
+
 // Register
+/**
+ * @openapi
+ * /api/auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AuthRegisterRequest'
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthResponse'
+ *       400:
+ *         description: User already exists or invalid payload
+ *       500:
+ *         description: Server error
+ */
 router.post('/register', async (req, res) => {
   try {
     const { email, password, full_name, role, phone, national_id, insurance_id } = req.body;
@@ -50,6 +130,31 @@ router.post('/register', async (req, res) => {
 });
 
 // Login
+/**
+ * @openapi
+ * /api/auth/login:
+ *   post:
+ *     summary: Authenticate a user and return a token
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AuthLoginRequest'
+ *     responses:
+ *       200:
+ *         description: Authentication successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthResponse'
+ *       400:
+ *         description: Invalid credentials
+ *       500:
+ *         description: Server error
+ */
 router.post('/login', async (req, res) => {
   try {
     console.log('Login attempt - Body:', JSON.stringify(req.body));
@@ -98,6 +203,27 @@ router.post('/login', async (req, res) => {
 });
 
 // Get current user
+/**
+ * @openapi
+ * /api/auth/me:
+ *   get:
+ *     summary: Get the authenticated user's profile
+ *     tags:
+ *       - Auth
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Authenticated user profile
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Profile'
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
 router.get('/me', authenticate, async (req, res) => {
   try {
     const userObj = req.user.toObject();

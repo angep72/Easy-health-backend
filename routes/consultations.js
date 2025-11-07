@@ -6,7 +6,85 @@ import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
+/**
+ * @openapi
+ * tags:
+ *   - name: Consultations
+ *     description: Manage medical consultations
+ * components:
+ *   schemas:
+ *     Consultation:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         appointment_id:
+ *           type: string
+ *         patient_id:
+ *           type: string
+ *         doctor_id:
+ *           type: string
+ *         diagnosis:
+ *           type: string
+ *         notes:
+ *           type: string
+ *         requires_lab_test:
+ *           type: boolean
+ *         requires_prescription:
+ *           type: boolean
+ *         consultation_date:
+ *           type: string
+ *           format: date-time
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *     ConsultationRequest:
+ *       type: object
+ *       required:
+ *         - appointment_id
+ *       properties:
+ *         appointment_id:
+ *           type: string
+ *         diagnosis:
+ *           type: string
+ *         notes:
+ *           type: string
+ *         requires_lab_test:
+ *           type: boolean
+ *         requires_prescription:
+ *           type: boolean
+ *         consultation_date:
+ *           type: string
+ *           format: date-time
+ */
+
 // Get consultations
+/**
+ * @openapi
+ * /api/consultations:
+ *   get:
+ *     summary: List consultations for the authenticated user
+ *     tags:
+ *       - Consultations
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Array of consultations
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Consultation'
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
 router.get('/', authenticate, async (req, res) => {
   try {
     const query = {};
@@ -39,6 +117,36 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 // Get consultation by ID
+/**
+ * @openapi
+ * /api/consultations/{id}:
+ *   get:
+ *     summary: Retrieve a consultation by ID
+ *     tags:
+ *       - Consultations
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Consultation ID
+ *     responses:
+ *       200:
+ *         description: Consultation details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Consultation'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Consultation not found
+ *       500:
+ *         description: Server error
+ */
 router.get('/:id', authenticate, async (req, res) => {
   try {
     const consultation = await Consultation.findById(req.params.id)
@@ -61,6 +169,36 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 // Get consultation by appointment ID
+/**
+ * @openapi
+ * /api/consultations/appointment/{appointmentId}:
+ *   get:
+ *     summary: Retrieve a consultation by appointment ID
+ *     tags:
+ *       - Consultations
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: appointmentId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Appointment ID
+ *     responses:
+ *       200:
+ *         description: Consultation details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Consultation'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Consultation not found
+ *       500:
+ *         description: Server error
+ */
 router.get('/appointment/:appointmentId', authenticate, async (req, res) => {
   try {
     const consultation = await Consultation.findOne({ appointment_id: req.params.appointmentId })
@@ -83,6 +221,37 @@ router.get('/appointment/:appointmentId', authenticate, async (req, res) => {
 });
 
 // Create consultation
+/**
+ * @openapi
+ * /api/consultations:
+ *   post:
+ *     summary: Create a consultation
+ *     tags:
+ *       - Consultations
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ConsultationRequest'
+ *     responses:
+ *       201:
+ *         description: Consultation created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Consultation'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
+ *       404:
+ *         description: Appointment not found
+ *       500:
+ *         description: Server error
+ */
 router.post('/', authenticate, async (req, res) => {
   try {
     if (req.user.role !== 'doctor') {
@@ -120,6 +289,44 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // Update consultation
+/**
+ * @openapi
+ * /api/consultations/{id}:
+ *   put:
+ *     summary: Update a consultation
+ *     tags:
+ *       - Consultations
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Consultation ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ConsultationRequest'
+ *     responses:
+ *       200:
+ *         description: Updated consultation
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Consultation'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
+ *       404:
+ *         description: Consultation not found
+ *       500:
+ *         description: Server error
+ */
 router.put('/:id', authenticate, async (req, res) => {
   try {
     const consultation = await Consultation.findById(req.params.id);

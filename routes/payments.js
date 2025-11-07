@@ -6,7 +6,92 @@ import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
+/**
+ * @openapi
+ * tags:
+ *   - name: Payments
+ *     description: Manage patient payments and coverage
+ * components:
+ *   schemas:
+ *     Payment:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         patient_id:
+ *           type: string
+ *         payment_type:
+ *           type: string
+ *           enum: [consultation, lab_test, medication]
+ *         reference_id:
+ *           type: string
+ *         amount:
+ *           type: number
+ *           format: float
+ *         insurance_coverage:
+ *           type: number
+ *           format: float
+ *         patient_pays:
+ *           type: number
+ *           format: float
+ *         status:
+ *           type: string
+ *           enum: [pending, completed, failed]
+ *         payment_method:
+ *           type: string
+ *         transaction_id:
+ *           type: string
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *     PaymentCreateRequest:
+ *       type: object
+ *       required:
+ *         - amount
+ *         - payment_type
+ *         - reference_id
+ *       properties:
+ *         amount:
+ *           type: number
+ *           format: float
+ *         payment_type:
+ *           type: string
+ *           enum: [consultation, lab_test, medication]
+ *         reference_id:
+ *           type: string
+ *         payment_method:
+ *           type: string
+ *         transaction_id:
+ *           type: string
+ */
+
 // Get payments
+/**
+ * @openapi
+ * /api/payments:
+ *   get:
+ *     summary: List payments for the authenticated user
+ *     tags:
+ *       - Payments
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Array of payments
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Payment'
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
 router.get('/', authenticate, async (req, res) => {
   try {
     const query = {};
@@ -31,6 +116,38 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 // Get payment by ID
+/**
+ * @openapi
+ * /api/payments/{id}:
+ *   get:
+ *     summary: Retrieve a payment by ID
+ *     tags:
+ *       - Payments
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Payment ID
+ *     responses:
+ *       200:
+ *         description: Payment details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Payment'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
+ *       404:
+ *         description: Payment not found
+ *       500:
+ *         description: Server error
+ */
 router.get('/:id', authenticate, async (req, res) => {
   try {
     const payment = await Payment.findById(req.params.id)
@@ -51,6 +168,35 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 // Create payment
+/**
+ * @openapi
+ * /api/payments:
+ *   post:
+ *     summary: Create a payment record
+ *     tags:
+ *       - Payments
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/PaymentCreateRequest'
+ *     responses:
+ *       201:
+ *         description: Payment recorded
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Payment'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
+ *       500:
+ *         description: Server error
+ */
 router.post('/', authenticate, async (req, res) => {
   try {
     if (req.user.role !== 'patient') {
@@ -94,6 +240,45 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // Get payment by reference
+/**
+ * @openapi
+ * /api/payments/reference/{type}/{referenceId}:
+ *   get:
+ *     summary: Retrieve a payment by reference
+ *     tags:
+ *       - Payments
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: type
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [consultation, lab_test, medication]
+ *         description: Payment type
+ *       - name: referenceId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Reference ID matching the payment
+ *     responses:
+ *       200:
+ *         description: Payment details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Payment'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
+ *       404:
+ *         description: Payment not found
+ *       500:
+ *         description: Server error
+ */
 router.get('/reference/:type/:referenceId', authenticate, async (req, res) => {
   try {
     const payment = await Payment.findOne({

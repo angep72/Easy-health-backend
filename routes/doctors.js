@@ -4,7 +4,90 @@ import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
+/**
+ * @openapi
+ * tags:
+ *   - name: Doctors
+ *     description: Manage doctor profiles and assignments
+ * components:
+ *   schemas:
+ *     Doctor:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         user_id:
+ *           type: string
+ *         hospital_id:
+ *           type: string
+ *         department_id:
+ *           type: string
+ *         specialization:
+ *           type: string
+ *         license_number:
+ *           type: string
+ *         consultation_fee:
+ *           type: number
+ *           format: float
+ *         signature_data:
+ *           type: string
+ *           description: Base64 encoded signature
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *     DoctorRequest:
+ *       type: object
+ *       required:
+ *         - user_id
+ *         - hospital_id
+ *         - department_id
+ *         - license_number
+ *         - consultation_fee
+ *       properties:
+ *         user_id:
+ *           type: string
+ *         hospital_id:
+ *           type: string
+ *         department_id:
+ *           type: string
+ *         specialization:
+ *           type: string
+ *         license_number:
+ *           type: string
+ *         consultation_fee:
+ *           type: number
+ *           format: float
+ *         signature_data:
+ *           type: string
+ */
+
 // Get all doctors
+/**
+ * @openapi
+ * /api/doctors:
+ *   get:
+ *     summary: List doctors
+ *     tags:
+ *       - Doctors
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Array of doctor profiles
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Doctor'
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
 router.get('/', authenticate, async (req, res) => {
   try {
     const doctors = await Doctor.find()
@@ -19,6 +102,36 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 // Get doctor by ID
+/**
+ * @openapi
+ * /api/doctors/{id}:
+ *   get:
+ *     summary: Retrieve a doctor by ID
+ *     tags:
+ *       - Doctors
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Doctor ID
+ *     responses:
+ *       200:
+ *         description: Doctor details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Doctor'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Doctor not found
+ *       500:
+ *         description: Server error
+ */
 router.get('/:id', authenticate, async (req, res) => {
   try {
     const doctor = await Doctor.findById(req.params.id)
@@ -35,6 +148,36 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 // Get doctor by user ID
+/**
+ * @openapi
+ * /api/doctors/user/{userId}:
+ *   get:
+ *     summary: Retrieve a doctor profile by user ID
+ *     tags:
+ *       - Doctors
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: userId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Profile ID of the doctor
+ *     responses:
+ *       200:
+ *         description: Doctor details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Doctor'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Doctor not found
+ *       500:
+ *         description: Server error
+ */
 router.get('/user/:userId', authenticate, async (req, res) => {
   try {
     const doctor = await Doctor.findOne({ user_id: req.params.userId })
@@ -51,6 +194,35 @@ router.get('/user/:userId', authenticate, async (req, res) => {
 });
 
 // Create doctor (admin only)
+/**
+ * @openapi
+ * /api/doctors:
+ *   post:
+ *     summary: Create a doctor profile
+ *     tags:
+ *       - Doctors
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/DoctorRequest'
+ *     responses:
+ *       201:
+ *         description: Doctor created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Doctor'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
+ *       500:
+ *         description: Server error
+ */
 router.post('/', authenticate, authorize('admin'), async (req, res) => {
   try {
     const doctor = new Doctor(req.body);
@@ -65,6 +237,44 @@ router.post('/', authenticate, authorize('admin'), async (req, res) => {
 });
 
 // Update doctor
+/**
+ * @openapi
+ * /api/doctors/{id}:
+ *   put:
+ *     summary: Update a doctor profile
+ *     tags:
+ *       - Doctors
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Doctor ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/DoctorRequest'
+ *     responses:
+ *       200:
+ *         description: Updated doctor profile
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Doctor'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
+ *       404:
+ *         description: Doctor not found
+ *       500:
+ *         description: Server error
+ */
 router.put('/:id', authenticate, async (req, res) => {
   try {
     const doctor = await Doctor.findById(req.params.id);
@@ -92,6 +302,34 @@ router.put('/:id', authenticate, async (req, res) => {
 });
 
 // Delete doctor (admin only)
+/**
+ * @openapi
+ * /api/doctors/{id}:
+ *   delete:
+ *     summary: Delete a doctor profile
+ *     tags:
+ *       - Doctors
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Doctor ID
+ *     responses:
+ *       200:
+ *         description: Doctor deleted confirmation
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
+ *       404:
+ *         description: Doctor not found
+ *       500:
+ *         description: Server error
+ */
 router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {
   try {
     const doctor = await Doctor.findByIdAndDelete(req.params.id);

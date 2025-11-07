@@ -6,14 +6,13 @@ MongoDB + Express + Node.js backend for the EasyHealth healthcare management pla
 
 1. Install dependencies:
 ```bash
-cd backend
 npm install
 ```
 
 2. Create a `.env` file (copy from `.env.example`):
 ```env
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/easyhealth
+MONGODB_URI= your mongo URI
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 NODE_ENV=development
 ```

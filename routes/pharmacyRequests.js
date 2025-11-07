@@ -5,7 +5,80 @@ import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
+/**
+ * @openapi
+ * tags:
+ *   - name: PharmacyRequests
+ *     description: Manage requests for pharmacy fulfillment
+ * components:
+ *   schemas:
+ *     PharmacyRequest:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         prescription_id:
+ *           type: string
+ *         patient_id:
+ *           type: string
+ *         pharmacy_id:
+ *           type: string
+ *         status:
+ *           type: string
+ *           enum: [pending, approved, rejected, completed]
+ *         rejection_reason:
+ *           type: string
+ *           nullable: true
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *     PharmacyRequestCreate:
+ *       type: object
+ *       required:
+ *         - prescription_id
+ *         - pharmacy_id
+ *       properties:
+ *         prescription_id:
+ *           type: string
+ *         pharmacy_id:
+ *           type: string
+ *     PharmacyRequestUpdate:
+ *       type: object
+ *       properties:
+ *         status:
+ *           type: string
+ *           enum: [pending, approved, rejected, completed]
+ *         rejection_reason:
+ *           type: string
+ */
+
 // Get pharmacy requests
+/**
+ * @openapi
+ * /api/pharmacy-requests:
+ *   get:
+ *     summary: List pharmacy requests for authenticated user
+ *     tags:
+ *       - PharmacyRequests
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Array of pharmacy requests
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/PharmacyRequest'
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
 router.get('/', authenticate, async (req, res) => {
   try {
     const query = {};
@@ -118,6 +191,36 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 // Get pharmacy request by ID
+/**
+ * @openapi
+ * /api/pharmacy-requests/{id}:
+ *   get:
+ *     summary: Retrieve a pharmacy request
+ *     tags:
+ *       - PharmacyRequests
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Pharmacy request ID
+ *     responses:
+ *       200:
+ *         description: Pharmacy request details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/PharmacyRequest'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Request not found
+ *       500:
+ *         description: Server error
+ */
 router.get('/:id', authenticate, async (req, res) => {
   try {
     const request = await PharmacyRequest.findById(req.params.id)
@@ -152,6 +255,35 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 // Create pharmacy request
+/**
+ * @openapi
+ * /api/pharmacy-requests:
+ *   post:
+ *     summary: Create a pharmacy request
+ *     tags:
+ *       - PharmacyRequests
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/PharmacyRequestCreate'
+ *     responses:
+ *       201:
+ *         description: Pharmacy request created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/PharmacyRequest'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
+ *       500:
+ *         description: Server error
+ */
 router.post('/', authenticate, async (req, res) => {
   try {
     if (req.user.role !== 'patient') {
@@ -185,6 +317,44 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // Update pharmacy request
+/**
+ * @openapi
+ * /api/pharmacy-requests/{id}:
+ *   put:
+ *     summary: Update a pharmacy request
+ *     tags:
+ *       - PharmacyRequests
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Pharmacy request ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/PharmacyRequestUpdate'
+ *     responses:
+ *       200:
+ *         description: Updated pharmacy request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/PharmacyRequest'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
+ *       404:
+ *         description: Request not found
+ *       500:
+ *         description: Server error
+ */
 router.put('/:id', authenticate, async (req, res) => {
   try {
     const request = await PharmacyRequest.findById(req.params.id);

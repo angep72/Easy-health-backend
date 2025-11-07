@@ -7,7 +7,144 @@ import PharmacyRequest from '../models/PharmacyRequest.js';
 
 const router = express.Router();
 
+/**
+ * @openapi
+ * tags:
+ *   - name: Prescriptions
+ *     description: Manage prescriptions and medication fulfillment
+ * components:
+ *   schemas:
+ *     PrescriptionItemInput:
+ *       type: object
+ *       required:
+ *         - medication_id
+ *         - quantity
+ *         - dosage
+ *       properties:
+ *         medication_id:
+ *           type: string
+ *         quantity:
+ *           type: integer
+ *           minimum: 1
+ *         dosage:
+ *           type: string
+ *         instructions:
+ *           type: string
+ *         unit_price:
+ *           type: number
+ *           format: float
+ *     Prescription:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         consultation_id:
+ *           type: string
+ *         patient_id:
+ *           type: string
+ *         doctor_id:
+ *           type: string
+ *         pharmacy_id:
+ *           type: string
+ *           nullable: true
+ *         status:
+ *           type: string
+ *           enum: [pending, approved, rejected, completed, paid]
+ *         total_price:
+ *           type: number
+ *           format: float
+ *         notes:
+ *           type: string
+ *         signature_data:
+ *           type: string
+ *         medication_id:
+ *           type: string
+ *         quantity:
+ *           type: integer
+ *         dosage:
+ *           type: string
+ *         instructions:
+ *           type: string
+ *         unit_price:
+ *           type: number
+ *           format: float
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *     PrescriptionCreateRequest:
+ *       type: object
+ *       required:
+ *         - consultation_id
+ *         - patient_id
+ *         - items
+ *       properties:
+ *         consultation_id:
+ *           type: string
+ *         patient_id:
+ *           type: string
+ *         notes:
+ *           type: string
+ *         signature_data:
+ *           type: string
+ *         status:
+ *           type: string
+ *           enum: [pending, approved, rejected, completed, paid]
+ *         items:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/PrescriptionItemInput'
+ *     PrescriptionUpdateRequest:
+ *       type: object
+ *       properties:
+ *         pharmacy_id:
+ *           type: string
+ *         status:
+ *           type: string
+ *           enum: [pending, approved, rejected, completed, paid]
+ *         notes:
+ *           type: string
+ *         signature_data:
+ *           type: string
+ *         medication_id:
+ *           type: string
+ *         quantity:
+ *           type: integer
+ *         dosage:
+ *           type: string
+ *         instructions:
+ *           type: string
+ *         unit_price:
+ *           type: number
+ *           format: float
+ */
+
 // Get prescriptions
+/**
+ * @openapi
+ * /api/prescriptions:
+ *   get:
+ *     summary: List prescriptions for the authenticated user
+ *     tags:
+ *       - Prescriptions
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Array of prescriptions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Prescription'
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
 router.get('/', authenticate, async (req, res) => {
   try {
     const query = {};
@@ -51,6 +188,36 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 // Get prescription by ID
+/**
+ * @openapi
+ * /api/prescriptions/{id}:
+ *   get:
+ *     summary: Retrieve a prescription by ID
+ *     tags:
+ *       - Prescriptions
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Prescription ID
+ *     responses:
+ *       200:
+ *         description: Prescription details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Prescription'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Prescription not found
+ *       500:
+ *         description: Server error
+ */
 router.get('/:id', authenticate, async (req, res) => {
   try {
     const prescription = await Prescription.findById(req.params.id)
@@ -77,6 +244,48 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 // Create prescription
+/**
+ * @openapi
+ * /api/prescriptions:
+ *   post:
+ *     summary: Create prescriptions from consultation items
+ *     tags:
+ *       - Prescriptions
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/PrescriptionCreateRequest'
+ *     responses:
+ *       201:
+ *         description: Prescriptions created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 prescriptions:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Prescription'
+ *                 count:
+ *                   type: integer
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Invalid request payload
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
+ *       404:
+ *         description: Doctor profile not found
+ *       500:
+ *         description: Server error
+ */
 router.post('/', authenticate, async (req, res) => {
   try {
     if (req.user.role !== 'doctor') {
@@ -159,6 +368,46 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // Update prescription
+/**
+ * @openapi
+ * /api/prescriptions/{id}:
+ *   put:
+ *     summary: Update a prescription
+ *     tags:
+ *       - Prescriptions
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Prescription ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/PrescriptionUpdateRequest'
+ *     responses:
+ *       200:
+ *         description: Updated prescription
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Prescription'
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
+ *       404:
+ *         description: Prescription not found
+ *       500:
+ *         description: Server error
+ */
 router.put('/:id', authenticate, async (req, res) => {
   try {
     const prescription = await Prescription.findById(req.params.id);

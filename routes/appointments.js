@@ -6,7 +6,70 @@ import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get all appointments
+/**
+ * @openapi
+ * tags:
+ *   - name: Appointments
+ *     description: Manage patient appointments and scheduling
+ * components:
+ *   schemas:
+ *     Appointment:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         patient_id:
+ *           type: string
+ *         doctor_id:
+ *           type: string
+ *         hospital_id:
+ *           type: string
+ *         department_id:
+ *           type: string
+ *         appointment_date:
+ *           type: string
+ *           format: date
+ *         appointment_time:
+ *           type: string
+ *           description: Time in HH:MM:SS format
+ *         status:
+ *           type: string
+ *           enum: [pending, approved, rejected, completed, cancelled]
+ *         reason:
+ *           type: string
+ *         rejection_reason:
+ *           type: string
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ */
+
+/**
+ * @openapi
+ * /api/appointments:
+ *   get:
+ *     summary: Get all appointments for the authenticated user
+ *     tags:
+ *       - Appointments
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of appointments
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Appointment'
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
 router.get('/', authenticate, async (req, res) => {
   try {
     const query = {};
@@ -39,7 +102,36 @@ router.get('/', authenticate, async (req, res) => {
   }
 });
 
-// Get appointment by ID
+/**
+ * @openapi
+ * /api/appointments/{id}:
+ *   get:
+ *     summary: Get an appointment by ID
+ *     tags:
+ *       - Appointments
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: Appointment ID
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Appointment object
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Appointment'
+ *       403:
+ *         description: Access denied
+ *       404:
+ *         description: Appointment not found
+ *       500:
+ *         description: Server error
+ */
 router.get('/:id', authenticate, async (req, res) => {
   try {
     const appointment = await Appointment.findById(req.params.id)
@@ -67,7 +159,51 @@ router.get('/:id', authenticate, async (req, res) => {
   }
 });
 
-// Create appointment
+/**
+ * @openapi
+ * /api/appointments:
+ *   post:
+ *     summary: Create a new appointment (patient only)
+ *     tags:
+ *       - Appointments
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               doctor_id:
+ *                 type: string
+ *               hospital_id:
+ *                 type: string
+ *               department_id:
+ *                 type: string
+ *               appointment_date:
+ *                 type: string
+ *                 format: date
+ *               appointment_time:
+ *                 type: string
+ *               reason:
+ *                 type: string
+ *             required:
+ *               - doctor_id
+ *               - appointment_date
+ *               - appointment_time
+ *     responses:
+ *       201:
+ *         description: Appointment created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Appointment'
+ *       403:
+ *         description: Only patients can create appointments
+ *       500:
+ *         description: Server error
+ */
 router.post('/', authenticate, async (req, res) => {
   try {
     if (req.user.role !== 'patient') {
@@ -106,7 +242,53 @@ router.post('/', authenticate, async (req, res) => {
   }
 });
 
-// Update appointment (approve/reject)
+/**
+ * @openapi
+ * /api/appointments/{id}:
+ *   put:
+ *     summary: Update an appointment (approve/reject or patient updates)
+ *     tags:
+ *       - Appointments
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: Appointment ID
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [pending, approved, rejected, cancelled]
+ *               appointment_date:
+ *                 type: string
+ *                 format: date
+ *               appointment_time:
+ *                 type: string
+ *               vitals:
+ *                 type: object
+ *     responses:
+ *       200:
+ *         description: Updated appointment
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Appointment'
+ *       403:
+ *         description: Access denied
+ *       404:
+ *         description: Appointment not found
+ *       500:
+ *         description: Server error
+ */
 router.put('/:id', authenticate, async (req, res) => {
   try {
     const appointment = await Appointment.findById(req.params.id);
@@ -164,7 +346,41 @@ router.put('/:id', authenticate, async (req, res) => {
   }
 });
 
-// Get available time slots
+/**
+ * @openapi
+ * /api/appointments/available/{doctorId}/{date}:
+ *   get:
+ *     summary: Get available time slots for a doctor on a date
+ *     tags:
+ *       - Appointments
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: doctorId
+ *         in: path
+ *         required: true
+ *         description: Doctor ID
+ *         schema:
+ *           type: string
+ *       - name: date
+ *         in: path
+ *         required: true
+ *         description: Date in YYYY-MM-DD format
+ *         schema:
+ *           type: string
+ *           format: date
+ *     responses:
+ *       200:
+ *         description: Array of available time slot strings (HH:MM:SS)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: string
+ *       500:
+ *         description: Server error
+ */
 router.get('/available/:doctorId/:date', authenticate, async (req, res) => {
   try {
     const { doctorId, date } = req.params;

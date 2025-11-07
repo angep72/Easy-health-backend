@@ -2,6 +2,18 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import connectDB from './config/database.js';
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './swagger.js';
+
+/**
+ * @openapi
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -68,7 +80,35 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/vitals', vitalRoutes);
 
+// register swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// optional raw JSON
+app.get('/api-docs.json', (req, res) => res.json(swaggerSpec));
+
 // Health check
+/**
+ * @openapi
+ * tags:
+ *   - name: Health
+ *     description: Service health monitoring
+ * /api/health:
+ *   get:
+ *     summary: Health check endpoint
+ *     tags:
+ *       - Health
+ *     responses:
+ *       200:
+ *         description: Service is running
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 message:
+ *                   type: string
+ */
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'EasyHealth API is running' });
 });

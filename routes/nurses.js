@@ -4,7 +4,64 @@ import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
+/**
+ * @openapi
+ * tags:
+ *   - name: Nurses
+ *     description: Manage nurse profiles
+ * components:
+ *   schemas:
+ *     Nurse:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         user_id:
+ *           type: string
+ *         license_number:
+ *           type: string
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *     NurseRequest:
+ *       type: object
+ *       required:
+ *         - user_id
+ *         - license_number
+ *       properties:
+ *         user_id:
+ *           type: string
+ *         license_number:
+ *           type: string
+ */
+
 // Get all nurses
+/**
+ * @openapi
+ * /api/nurses:
+ *   get:
+ *     summary: List nurses
+ *     tags:
+ *       - Nurses
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Array of nurse profiles
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Nurse'
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
 router.get('/', authenticate, async (req, res) => {
   try {
     const nurses = await Nurse.find()
@@ -17,6 +74,36 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 // Get nurse by ID
+/**
+ * @openapi
+ * /api/nurses/{id}:
+ *   get:
+ *     summary: Retrieve a nurse by ID
+ *     tags:
+ *       - Nurses
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Nurse ID
+ *     responses:
+ *       200:
+ *         description: Nurse details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Nurse'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Nurse not found
+ *       500:
+ *         description: Server error
+ */
 router.get('/:id', authenticate, async (req, res) => {
   try {
     const nurse = await Nurse.findById(req.params.id)
@@ -31,6 +118,36 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 // Get nurse by user ID
+/**
+ * @openapi
+ * /api/nurses/user/{userId}:
+ *   get:
+ *     summary: Retrieve a nurse by user ID
+ *     tags:
+ *       - Nurses
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: userId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Profile ID of the nurse
+ *     responses:
+ *       200:
+ *         description: Nurse details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Nurse'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Nurse not found
+ *       500:
+ *         description: Server error
+ */
 router.get('/user/:userId', authenticate, async (req, res) => {
   try {
     const nurse = await Nurse.findOne({ user_id: req.params.userId })
@@ -45,6 +162,35 @@ router.get('/user/:userId', authenticate, async (req, res) => {
 });
 
 // Create nurse (admin only)
+/**
+ * @openapi
+ * /api/nurses:
+ *   post:
+ *     summary: Create a nurse profile
+ *     tags:
+ *       - Nurses
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/NurseRequest'
+ *     responses:
+ *       201:
+ *         description: Nurse created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Nurse'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
+ *       500:
+ *         description: Server error
+ */
 router.post('/', authenticate, authorize('admin'), async (req, res) => {
   try {
     const nurse = new Nurse(req.body);
@@ -57,6 +203,44 @@ router.post('/', authenticate, authorize('admin'), async (req, res) => {
 });
 
 // Update nurse
+/**
+ * @openapi
+ * /api/nurses/{id}:
+ *   put:
+ *     summary: Update a nurse profile
+ *     tags:
+ *       - Nurses
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Nurse ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/NurseRequest'
+ *     responses:
+ *       200:
+ *         description: Updated nurse profile
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Nurse'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
+ *       404:
+ *         description: Nurse not found
+ *       500:
+ *         description: Server error
+ */
 router.put('/:id', authenticate, async (req, res) => {
   try {
     const nurse = await Nurse.findById(req.params.id);
@@ -80,6 +264,34 @@ router.put('/:id', authenticate, async (req, res) => {
 });
 
 // Delete nurse (admin only)
+/**
+ * @openapi
+ * /api/nurses/{id}:
+ *   delete:
+ *     summary: Delete a nurse profile
+ *     tags:
+ *       - Nurses
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Nurse ID
+ *     responses:
+ *       200:
+ *         description: Nurse deleted confirmation
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
+ *       404:
+ *         description: Nurse not found
+ *       500:
+ *         description: Server error
+ */
 router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {
   try {
     const nurse = await Nurse.findByIdAndDelete(req.params.id);
