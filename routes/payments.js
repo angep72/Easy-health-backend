@@ -2,6 +2,8 @@ import express from 'express';
 import Payment from '../models/Payment.js';
 import Profile from '../models/Profile.js';
 import Insurance from '../models/Insurance.js';
+import Doctor from '../models/Doctor.js';
+import Appointment from '../models/Appointment.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -290,11 +292,29 @@ router.get('/reference/:type/:referenceId', authenticate, async (req, res) => {
       return res.status(404).json({ error: 'Payment not found' });
     }
 
-    if (req.user.role !== 'admin' && payment.patient_id._id.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ error: 'Access denied' });
+    // Allow access for admins
+    if (req.user.role === 'admin') {
+      return res.json(payment);
     }
 
-    res.json(payment);
+    // Allow access for the patient themselves
+    if (payment.patient_id._id.toString() === req.user._id.toString()) {
+      return res.json(payment);
+    }
+
+    // Allow access for doctors if it's a consultation payment and the appointment is assigned to them
+    if (req.user.role === 'doctor' && req.params.type === 'consultation') {
+      const doctor = await Doctor.findOne({ user_id: req.user._id });
+      if (doctor) {
+        const appointment = await Appointment.findById(req.params.referenceId);
+        if (appointment && appointment.doctor_id.toString() === doctor._id.toString()) {
+          return res.json(payment);
+        }
+      }
+    }
+
+    // Deny access for all other cases
+    return res.status(403).json({ error: 'Access denied' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
